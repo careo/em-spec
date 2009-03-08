@@ -18,6 +18,14 @@ class Bacon::FiberedContext < Bacon::Context
       $bacon_fiber.resume if $bacon_fiber
     }
   end
+
+  def timeout sec
+    EM.add_timer(sec) {
+      # TODO: die with some timeout notice
+      EM.stop
+    }
+  end
+
 end
 
 require 'eventmachine'
@@ -77,6 +85,30 @@ if __FILE__ == $0
       defr = EM::DefaultDeferrable.new
       defr.timeout(1)
       defr.errback{
+        done
+      }
+    end
+  end
+
+  EM.describe "EventMachine with a timeout" do
+    timeout 1
+
+    should "run this" do
+      1.should == 1
+      done
+    end
+    
+    EM.add_timer(2) {
+      should "timeout before getting here" do
+        false.should == true
+      end
+      done
+    }
+    
+    should "bail in the middle of this" do
+      1.should == 1
+      EM.add_timer(2) {
+        false.should == true
         done
       }
     end
